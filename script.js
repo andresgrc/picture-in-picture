@@ -5,6 +5,11 @@ const button = document.getElementById('button');
 // Function to select and initialize the media stream
 async function selectMediaStream() {
     try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert("Screen sharing is not supported on this browser. Please use a desktop browser for this feature.");
+            return;
+        }
+
         // Prompt user to select a screen/window to share
         const mediaStream = await navigator.mediaDevices.getDisplayMedia();
         videoElement.srcObject = mediaStream;
@@ -21,6 +26,28 @@ async function selectMediaStream() {
         };
     } catch (error) {
         console.error("Error selecting media stream:", error);
+        alert("Error accessing screen sharing: " + error.message);
+    }
+}
+
+// Function to handle Picture-in-Picture
+async function startPictureInPicture() {
+    if (!document.pictureInPictureEnabled || !videoElement.requestPictureInPicture) {
+        alert("Picture-in-Picture is not supported on this browser.");
+        return;
+    }
+
+    try {
+        // Disable the button
+        button.disabled = true;
+        // Start Picture-in-Picture
+        await videoElement.requestPictureInPicture();
+    } catch (error) {
+        console.error("Error starting Picture-in-Picture:", error);
+        alert("Error starting Picture-in-Picture: " + error.message);
+    } finally {
+        // Re-enable the button
+        button.disabled = false;
     }
 }
 
@@ -29,19 +56,16 @@ button.addEventListener('click', async () => {
     if (!videoElement.srcObject) {
         // If no media stream is active, select a new one
         await selectMediaStream();
-    }
-    try {
-        // Disable the button
-        button.disabled = true;
-        // Start Picture-in-Picture
-        await videoElement.requestPictureInPicture();
-    } catch (error) {
-        console.error("Error starting Picture-in-Picture:", error);
-    } finally {
-        // Re-enable the button
-        button.disabled = false;
+    } else {
+        await startPictureInPicture();
     }
 });
 
-// Initialize on page load
-selectMediaStream();
+// Check for API support and provide a warning if unsupported
+if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    alert("Screen sharing is not supported on this browser. For the best experience, use a desktop browser.");
+}
+
+if (!document.pictureInPictureEnabled) {
+    alert("Picture-in-Picture is not supported on this browser.");
+}
